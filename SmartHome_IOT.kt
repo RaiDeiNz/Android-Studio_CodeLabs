@@ -27,7 +27,7 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
     override val deviceType = "Smart TV"
 
     private var speakerVolume by RangeRegulator(initialValue = 9, minValue = 0, maxValue = 100)
-    private var channelNumber by RangeRegulator(initialValue = 0, minValue = 0, maxValue = 200)
+    private var channelNumber by RangeRegulator(initialValue = 199, minValue = 0, maxValue = 200)
 
     fun increaseSpeakerVolume() {
         speakerVolume++
@@ -40,14 +40,22 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
     }
 
     fun nextChannel() {
-        channelNumber++
-        println("Channel number increased to $channelNumber.")
+        if(channelNumber == 200) {
+            channelNumber = 0
+            println("Homepage Menu")
+        } else {
+         	channelNumber++
+            println("Channel number increased to $channelNumber.")
+        }        
     }
 
     fun previousChannel() {
-        channelNumber--
-        if(channelNumber == 0){
+        if(channelNumber == 1){
+            channelNumber--
             println("Homepage Menu")
+        } else if(channelNumber == 0) {
+            channelNumber = 200
+            println("Channel number decreased to $channelNumber.")
         } else {
             println("Channel number decreased to $channelNumber.")
         }
@@ -220,8 +228,11 @@ fun main() {
     smartHome.turnOnTv()
     smartHome.increaseTvVolume()
     smartHome.decreaseTvVolume()
-    smartHome.changeTvChannelToNext()
-    smartHome.changeTvChannelToPrevious()
+    smartHome.changeTvChannelToNext() // #200
+    smartHome.changeTvChannelToNext() // HomePage Menu
+    smartHome.changeTvChannelToNext() // #1
+    smartHome.changeTvChannelToPrevious() // HomePage Menu
+    smartHome.changeTvChannelToPrevious() // #200
     smartHome.printSmartTvInfo()
     println("-----\n")
 	println("-----")
