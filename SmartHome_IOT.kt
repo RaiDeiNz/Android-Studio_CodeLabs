@@ -26,8 +26,8 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
 
     override val deviceType = "Smart TV"
 
-    private var speakerVolume by RangeRegulator(initialValue = 2, minValue = 0, maxValue = 100)
-    private var channelNumber by RangeRegulator(initialValue = 1, minValue = 0, maxValue = 200)
+    private var speakerVolume by RangeRegulator(initialValue = 9, minValue = 0, maxValue = 100)
+    private var channelNumber by RangeRegulator(initialValue = 0, minValue = 0, maxValue = 200)
 
     fun increaseSpeakerVolume() {
         speakerVolume++
@@ -46,7 +46,11 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
 
     fun previousChannel() {
         channelNumber--
-        println("Channel number decreased to $channelNumber.")
+        if(channelNumber == 0){
+            println("Homepage Menu")
+        } else {
+            println("Channel number decreased to $channelNumber.")
+        }
     }
 
     override fun turnOn() {
@@ -65,7 +69,7 @@ class SmartLightDevice(deviceName: String, deviceCategory: String) :
 
     override val deviceType = "Smart Light"
 
-    private var brightnessLevel by RangeRegulator(initialValue = 0, minValue = 0, maxValue = 100)
+    private var brightnessLevel by RangeRegulator(initialValue = 1, minValue = 1, maxValue = 100)
 
     fun increaseBrightness() {
         brightnessLevel++
@@ -180,7 +184,7 @@ class SmartHome(
     fun printSmartLightInfo() {
         smartLightDevice.printDeviceInfo()
     }
-
+    
     fun turnOffAllDevices() {
         turnOffTv()
         turnOffLight()
@@ -208,7 +212,7 @@ class RangeRegulator(
 
 fun main() {
     val smartHome = SmartHome(
-        smartTvDevice = SmartTvDevice("Samsung TV", "Entertainment"),
+        smartTvDevice = SmartTvDevice("Samsung Android TV", "Entertainment"),
         smartLightDevice = SmartLightDevice("Hacker' Lights", "Utility")
     )
 
@@ -224,15 +228,17 @@ fun main() {
     smartHome.turnOnLight()
     smartHome.increaseLightBrightness()
     smartHome.decreaseLightBrightness()
+    smartHome.decreaseLightBrightness()
+    smartHome.decreaseLightBrightness()
     smartHome.printSmartLightInfo()
     println("-----\n")
 
     println("""
-    =====================================
-        Total turned on devices: ${smartHome.deviceTurnOnCount}
+=======================================
+Total turned on devices: ${smartHome.deviceTurnOnCount}
     """)
     smartHome.turnOffAllDevices()
     println("""
-    Runing device check: ${smartHome.deviceTurnOnCount} running device
-    =====================================""")
+Running device check: ${smartHome.deviceTurnOnCount} running device
+======================================""")
 }
