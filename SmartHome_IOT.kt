@@ -4,7 +4,7 @@ import kotlin.reflect.KProperty
 open class SmartDevice(val name: String, val category: String) {
 
     var deviceStatus = "online"
-    	protected set
+        protected set
 
     open val deviceType = "unknown"
 
@@ -40,30 +40,37 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
     }
 
     fun nextChannel() {
-        if(channelNumber == 200) {
+        if (channelNumber == 200) {
             channelNumber = 0
             println("Homepage Menu")
         } else {
-         	channelNumber++
+            channelNumber++
             println("Channel number increased to $channelNumber.")
-        }        
+        }
     }
-       // Possible to write with "if() when * -> *"
+
     fun previousChannel() {
-        if(channelNumber == 1){
-            channelNumber--
-            println("Homepage Menu")
-        } else if(channelNumber == 0) {
-            channelNumber = 200
-            println("Channel number decreased to $channelNumber.")
-        } else {
-            println("Channel number decreased to $channelNumber.")
+        when {
+            channelNumber == 1 -> {
+                channelNumber = 0
+                println("Homepage Menu")
+            }
+            channelNumber == 0 -> {
+                channelNumber = 200
+                println("Channel number increased to $channelNumber.")
+            }
+            else -> {
+                channelNumber--
+                println("Channel number decreased to $channelNumber.")
+            }
         }
     }
 
     override fun turnOn() {
         super.turnOn()
-        println("$name is turned on. Speaker volume is set to $speakerVolume and channel number is set to $channelNumber.")
+        println(
+            "$name is turned on. Speaker volume is set to $speakerVolume and channel number is set to $channelNumber."
+        )
     }
 
     override fun turnOff() {
@@ -74,30 +81,46 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
 
 class SmartLightDevice(deviceName: String, deviceCategory: String) :
     SmartDevice(name = deviceName, category = deviceCategory) {
-        
+
     override val deviceType = "Smart Light"
 
     internal var brightnessLevel by RangeRegulator(initialValue = 1, minValue = 0, maxValue = 100)
-    
+    private var previousBrightnessLevel: Int = 1
+
     fun increaseBrightness() {
         brightnessLevel++
         println("Brightness increased to $brightnessLevel%.")
     }
 
     fun decreaseBrightness() {
-        brightnessLevel--
-        println("Brightness decreased to $brightnessLevel%.")
+        if (brightnessLevel > 0) {
+            if (brightnessLevel == 1) {
+                previousBrightnessLevel = 1
+            } else {
+                previousBrightnessLevel = brightnessLevel
+            }
+            brightnessLevel--
+            println("Brightness decreased to $brightnessLevel%.")
+        } else {
+            println("The lights are off, you must turn them on first to increase the brightness")
+        }
     }
 
     override fun turnOn() {
         super.turnOn()
-        println("$name turned on. The brightness level is $brightnessLevel.")
+        brightnessLevel = if (previousBrightnessLevel == 0) 1 else previousBrightnessLevel
+        println("$name turned on. The brightness level is $brightnessLevel%.")
     }
 
     override fun turnOff() {
         super.turnOff()
-        brightnessLevel = 0
-        println("Smart Light turned off")
+        if (brightnessLevel != 0) {
+            previousBrightnessLevel = brightnessLevel
+            brightnessLevel = 0
+            println("$name turned off manually.")
+        } else {
+            println("$name turned off by decreasing.")
+        }
     }
 }
 
@@ -169,10 +192,9 @@ class SmartHome(
     }
 
     fun increaseLightBrightness() {
-        if (smartLightDevice.deviceStatus != null) {
-            if(smartLightDevice.brightnessLevel == 0){
-                turnOnLight()
-            }
+        if (smartLightDevice.brightnessLevel == 0) {
+            turnOnLight()
+        } else {
             smartLightDevice.increaseBrightness()
         }
     }
@@ -180,9 +202,11 @@ class SmartHome(
     fun decreaseLightBrightness() {
         if (smartLightDevice.deviceStatus == "on") {
             smartLightDevice.decreaseBrightness()
-            if(smartLightDevice.brightnessLevel == 0){
+            if (smartLightDevice.brightnessLevel == 0) {
                 turnOffLight()
             }
+        } else {
+            println("The lights are off, you must turn them on first to increase the brightness")
         }
     }
 
@@ -193,21 +217,18 @@ class SmartHome(
     fun printSmartLightInfo() {
         smartLightDevice.printDeviceInfo()
     }
-    
+
     fun turnOffAllDevices() {
         turnOffTv()
         turnOffLight()
     }
 }
 
-class RangeRegulator(
-    initialValue: Int,
-    private val minValue: Int,
-    private val maxValue: Int
-) : ReadWriteProperty<Any?, Int> {
+class RangeRegulator(initialValue: Int, private val minValue: Int, private val maxValue: Int) :
+    ReadWriteProperty<Any?, Int> {
 
     private var fieldData = initialValue
-    
+
     override fun getValue(thisRef: Any?, property: KProperty<*>): Int {
         return fieldData
     }
@@ -220,38 +241,60 @@ class RangeRegulator(
 }
 
 fun main() {
-    val smartHome = SmartHome(
-        smartTvDevice = SmartTvDevice("Samsung Android TV", "Entertainment"),
-        smartLightDevice = SmartLightDevice("Hacker' Lights", "Utility")
-    )
+    val smartHome =
+        SmartHome(
+            smartTvDevice = SmartTvDevice("Samsung Android TV", "Entertainment"),
+            smartLightDevice = SmartLightDevice("Hacker' Lights", "Utility")
+        )
 
-    println("-----")
+    println("----- Tv -----")
     smartHome.turnOnTv()
-    smartHome.increaseTvVolume()
-    smartHome.decreaseTvVolume()
     smartHome.changeTvChannelToNext() // #200
-    smartHome.changeTvChannelToNext() // HomePage Menu
+    smartHome.changeTvChannelToNext() // HomePage Menu ( #0 )
     smartHome.changeTvChannelToNext() // #1
     smartHome.changeTvChannelToPrevious() // HomePage Menu
     smartHome.changeTvChannelToPrevious() // #200
+	println("----- Sound -----")
+    smartHome.increaseTvVolume()
+    smartHome.increaseTvVolume()
+    smartHome.decreaseTvVolume()
+	smartHome.turnOffAllDevices() // When it's off
+	smartHome.decreaseTvVolume() // Should print "TV is off. Cannot decrease volume."
+    smartHome.increaseTvVolume()
+    smartHome.turnOnTv()
+    smartHome.increaseTvVolume() // It already remembers the last volume level, no need to write new code
+    smartHome.decreaseTvVolume()
+	println("-----")
     smartHome.printSmartTvInfo()
     println("-----\n")
-	println("-----")
-    smartHome.turnOnLight() // power Level #2
-    smartHome.increaseLightBrightness() // #3
-    smartHome.decreaseLightBrightness() // #2
+    println("----- Light -----")
+    smartHome.turnOnLight() // power Level #1
+    smartHome.increaseLightBrightness() // #2
     smartHome.decreaseLightBrightness() // #1
     smartHome.decreaseLightBrightness() // #0 = Activating turn off method
-    smartHome.increaseLightBrightness() // power level must be #1
+    println("-----")
+    smartHome.decreaseLightBrightness() // Still #0, else method must be work
+    smartHome.increaseLightBrightness() // Lights should turn on automatically at level 1. Also tested before smartHome.turnOnLight() and off
+    smartHome.increaseLightBrightness() // #2
+    smartHome.increaseLightBrightness() // #2
+    smartHome.increaseLightBrightness() // #3
+    println("-----")
+    smartHome.turnOffLight() // #3 but turned off
+    smartHome.turnOnLight() // must be start at #3
+    println("-----")
     smartHome.printSmartLightInfo()
     println("-----\n")
 
-    println("""
+    println(
+        """
 =======================================
 Total turned on devices: ${smartHome.deviceTurnOnCount}
-    """)
+    """
+    )
     smartHome.turnOffAllDevices()
-    println("""
+    println(
+        """
 Running device check: ${smartHome.deviceTurnOnCount} running device
-======================================""")
+======================================"""
+    )
 }
