@@ -4,7 +4,7 @@ import kotlin.reflect.KProperty
 open class SmartDevice(val name: String, val category: String) {
 
     var deviceStatus = "online"
-        protected set
+    	protected set
 
     open val deviceType = "unknown"
 
@@ -48,7 +48,7 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
             println("Channel number increased to $channelNumber.")
         }        
     }
-
+       // Possible to write with "if() when * -> *"
     fun previousChannel() {
         if(channelNumber == 1){
             channelNumber--
@@ -74,24 +74,23 @@ class SmartTvDevice(deviceName: String, deviceCategory: String) :
 
 class SmartLightDevice(deviceName: String, deviceCategory: String) :
     SmartDevice(name = deviceName, category = deviceCategory) {
-
+        
     override val deviceType = "Smart Light"
 
-    private var brightnessLevel by RangeRegulator(initialValue = 1, minValue = 1, maxValue = 100)
-
+    internal var brightnessLevel by RangeRegulator(initialValue = 1, minValue = 0, maxValue = 100)
+    
     fun increaseBrightness() {
         brightnessLevel++
-        println("Brightness increased to $brightnessLevel.")
+        println("Brightness increased to $brightnessLevel%.")
     }
 
     fun decreaseBrightness() {
         brightnessLevel--
-        println("Brightness decreased to $brightnessLevel.")
+        println("Brightness decreased to $brightnessLevel%.")
     }
 
     override fun turnOn() {
         super.turnOn()
-        brightnessLevel = 2
         println("$name turned on. The brightness level is $brightnessLevel.")
     }
 
@@ -170,18 +169,20 @@ class SmartHome(
     }
 
     fun increaseLightBrightness() {
-        if (smartLightDevice.deviceStatus == "on") {
+        if (smartLightDevice.deviceStatus != null) {
+            if(smartLightDevice.brightnessLevel == 0){
+                turnOnLight()
+            }
             smartLightDevice.increaseBrightness()
-        } else {
-            println("Light is off. Cannot increase brightness.")
         }
     }
 
     fun decreaseLightBrightness() {
         if (smartLightDevice.deviceStatus == "on") {
             smartLightDevice.decreaseBrightness()
-        } else {
-            println("Light is off. Cannot decrease brightness.")
+            if(smartLightDevice.brightnessLevel == 0){
+                turnOffLight()
+            }
         }
     }
 
@@ -206,7 +207,7 @@ class RangeRegulator(
 ) : ReadWriteProperty<Any?, Int> {
 
     private var fieldData = initialValue
-
+    
     override fun getValue(thisRef: Any?, property: KProperty<*>): Int {
         return fieldData
     }
@@ -236,11 +237,12 @@ fun main() {
     smartHome.printSmartTvInfo()
     println("-----\n")
 	println("-----")
-    smartHome.turnOnLight()
-    smartHome.increaseLightBrightness()
-    smartHome.decreaseLightBrightness()
-    smartHome.decreaseLightBrightness()
-    smartHome.decreaseLightBrightness()
+    smartHome.turnOnLight() // power Level #2
+    smartHome.increaseLightBrightness() // #3
+    smartHome.decreaseLightBrightness() // #2
+    smartHome.decreaseLightBrightness() // #1
+    smartHome.decreaseLightBrightness() // #0 = Activating turn off method
+    smartHome.increaseLightBrightness() // power level must be #1
     smartHome.printSmartLightInfo()
     println("-----\n")
 
